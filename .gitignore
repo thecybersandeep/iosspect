@@ -1,0 +1,34 @@
+# Theos
+.theos/
+packages/
+*.deb
+.target.mk
+obj/
+
+# Local CI artefacts (deb pulls from gh)
+ci-out/
+
+# Generated Sileo index files. CI regenerates them on every push.
+repo/Packages
+repo/Packages.bz2
+repo/Packages.gz
+repo/Release
+
+# Xcode / Swift
+DerivedData/
+*.xcuserstate
+*.xcuserdatad
+xcuserdata/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Local key material that would accidentally leak. The runtime cert
+# lives at /var/mobile/Library/IOSspect/ on the device, not here.
+*.p12
+*.pem
+*.jks
+*.keystore
