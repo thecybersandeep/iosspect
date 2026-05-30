@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  LaunchDaemon for iosspectd. Loaded by launchd as root.
+  KeepAlive=false so the daemon only runs when the user starts it
+  from the IOSspect app (or kicks it from the dashboard).
+  Rootless paths are rewritten by Theos when THEOS_PACKAGE_SCHEME=rootless.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.iosspect.daemon</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/iosspectd</string>
+    </array>
+    <key>KeepAlive</key>
+    <false/>
+    <key>RunAtLoad</key>
+    <false/>
+    <key>StandardOutPath</key>
+    <string>/var/log/iosspectd.log</string>
+    <key>StandardErrorPath</key>
+    <string>/var/log/iosspectd.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>IOSSPECT_PORT</key>
+        <string>8008</string>
+    </dict>
+    <key>UserName</key>
+    <string>root</string>
+    <key>GroupName</key>
+    <string>wheel</string>
+</dict>
+</plist>

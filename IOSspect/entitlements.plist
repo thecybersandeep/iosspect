@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Entitlements for the SwiftUI app. On rootless jailbreaks (Dopamine,
+  palera1n) these get re-signed at build time so the app can talk to
+  launchctl, read /var/mobile/Containers, and grant itself the same
+  capabilities a daemon enjoys.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>platform-application</key>
+    <true/>
+    <key>com.apple.private.security.no-container</key>
+    <true/>
+    <key>com.apple.private.security.no-sandbox</key>
+    <true/>
+    <key>com.apple.private.persona-mgmt</key>
+    <true/>
+    <key>com.apple.springboard.opensensitiveurl</key>
+    <true/>
+    <key>get-task-allow</key>
+    <true/>
+</dict>
+</plist>

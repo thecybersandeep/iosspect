@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="dark light">
+    <title>IOSspect - Live iOS Runtime Audit</title>
+    <meta name="description" content="On-device runtime auditor for jailbroken iOS. Browse app data containers, plists, SQLite, Console, all from your browser.">
+    <meta name="theme-color" content="#07080B">
+    <meta name="application-name" content="IOSspect">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta name="robots" content="noindex, nofollow">
+
+    <link rel="icon" type="image/svg+xml" href="/icon.svg">
+    <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+    <!-- ====================================================================
+         Icon sprite. Lucide-style stroke icons (24x24 viewBox, 2px
+         stroke, currentColor). Referenced via <use href="#i-..."/> so
+         each icon inherits text color from its container.
+         ==================================================================== -->
+    <svg id="icon-sprite" aria-hidden="true" focusable="false"
+         style="position:absolute;width:0;height:0;overflow:hidden"
+         xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+            <symbol id="i-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
+            <symbol id="i-blocks" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="14" y="3" rx="1"/><path d="M10 21V8a1 1 0 0 1 1-1h10"/><path d="M3 11V3"/><path d="M11 11h-8"/><path d="M11 21H4a1 1 0 0 1-1-1V11"/></symbol>
+            <symbol id="i-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></symbol>
+            <symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.5.5 0 0 1-.96 0L9.68 3.18a.5.5 0 0 0-.96 0l-2.35 8.36A2 2 0 0 1 4.44 13H2"/></symbol>
+            <symbol id="i-network" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></symbol>
+            <symbol id="i-terminal-square" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 11 2-2-2-2"/><path d="M11 13h4"/><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/></symbol>
+            <symbol id="i-terminal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></symbol>
+            <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></symbol>
+            <symbol id="i-square" viewBox="0 0 24 24" fill="currentColor"><rect width="14" height="14" x="5" y="5" rx="1"/></symbol>
+            <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></symbol>
+            <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></symbol>
+            <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+            <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></symbol>
+        </defs>
+    </svg>
+
+    <!-- ====================================================================
+         Header: ~48px, logo + companion nav + global search + status + theme
+         ==================================================================== -->
+    <header class="header" role="banner">
+        <a href="#" class="logo" aria-label="IOSspect">
+            <svg viewBox="0 0 36 36" width="24" height="24" aria-hidden="true">
+                <rect x="3" y="3" width="30" height="30" rx="8.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>
+                <circle cx="18" cy="18" r="6.2" fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+                <circle cx="18" cy="18" r="2.4" fill="var(--accent)"/>
+                <line x1="18" y1="6"  x2="18" y2="9"  stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+                <line x1="18" y1="27" x2="18" y2="30" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+                <line x1="6"  y1="18" x2="9"  y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+                <line x1="27" y1="18" x2="30" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+            </svg>
+            <span class="logo-text"><b>IOS</b>spect</span>
+        </a>
+
+        <nav class="companion-nav" aria-label="Companion tools">
+            <a href="https://apkauditor.com/" target="_blank" rel="noopener" title="Static APK analysis">APK Auditor</a>
+            <a href="https://ipaauditor.com/" target="_blank" rel="noopener" title="Static IPA analysis">IPA Auditor</a>
+            <a href="https://adbauditor.com/" target="_blank" rel="noopener" title="Live ADB / WebUSB audit">ADB Auditor</a>
+        </nav>
+
+        <div class="header-spacer"></div>
+
+        <div class="header-status">
+            <span class="pill" id="root-pill"><span class="dot"></span>checking</span>
+            <span class="pill subtle" id="dev-pill">device</span>
+        </div>
+
+        <button class="icon-btn" id="themeToggle" type="button" aria-label="Toggle theme" title="Toggle theme (T)">
+            <svg class="theme-dark"  viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="theme-light" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+    </header>
+
+    <!-- ====================================================================
+         Main workspace: three zones - sidebar (apps), tabs, content
+         ==================================================================== -->
+    <div class="workspace">
+
+        <!-- ============================================================
+             LEFT SIDEBAR - single source of nav.
+               1. App picker (filter + list)
+               2. Per-app actions (visible only when an app is selected)
+               3. Feature nav, grouped: Inspect / Live / Act
+             Prefs & SQLite are file-type renderers off of Files, so
+             they don't appear in the nav. Clicking a *.xml prefs or
+             *.db file auto-jumps the user there.
+             ============================================================ -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sb-block sb-apps">
+                <div class="sidebar-header">
+                    <span class="sb-ic-inline"><svg class="ic ic-sm"><use href="#i-search"/></svg></span>
+                    <input id="app-search" class="input" placeholder="Filter apps  (/ to focus)" autocomplete="off" spellcheck="false">
+                </div>
+                <div class="sidebar-toggles">
+                    <label class="check" title="Include system apps"><input type="checkbox" id="app-system"> system apps</label>
+                    <label class="check" title="Only show apps with a running process"><input type="checkbox" id="app-running"> running only</label>
+                </div>
+                <div class="sidebar-meta">
+                    <span id="apps-count" class="muted">...</span>
+                    <button class="link-btn" id="app-refresh" title="Refresh apps"><svg class="ic ic-sm"><use href="#i-refresh"/></svg></button>
+                </div>
+                <div class="app-list" id="app-list" role="list"></div>
+            </div>
+
+            <div class="sb-block sb-actions" id="sb-actions" hidden>
+                <div class="sb-action-row">
+                    <button class="sb-action-ic" data-action="pull-apk"   title="Download IPA (encrypted bundle, inspection only)"><svg class="ic ic-sm"><use href="#i-download"/></svg></button>
+                    <button class="sb-action-ic danger" data-action="clear" title="Wipe data container (rm -rf contents)"><svg class="ic ic-sm"><use href="#i-trash"/></svg></button>
+                </div>
+            </div>
+
+            <nav class="sb-nav" id="tabbar" role="tablist" aria-label="Audit nav">
+                <!-- INSPECT (Files / Manifest / Components / Native)
+                     lives in the main pane as a horizontal tab strip;
+                     see #main-tabs below. It's per-app context, so it
+                     belongs ABOVE the content it modifies, not in the
+                     global sidebar. -->
+                <div class="sb-section">
+                    <div class="sb-label">Live</div>
+                    <a class="sb-link tab" data-tab="processes"  role="tab"><svg class="ic"><use href="#i-activity"/></svg>Processes</a>
+                    <a class="sb-link tab" data-tab="net"        role="tab"><svg class="ic"><use href="#i-network"/></svg>Network</a>
+                    <a class="sb-link tab" data-tab="logcat"     role="tab"><svg class="ic"><use href="#i-terminal-square"/></svg>Console</a>
+                </div>
+                <div class="sb-section">
+                    <div class="sb-label">Act</div>
+                    <a class="sb-link tab" data-tab="shell"      role="tab"><svg class="ic"><use href="#i-terminal"/></svg>Shell</a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- MAIN AREA: thin header (selected app metadata) + panel content -->
+        <main class="main">
+
+            <div class="main-header">
+                <div class="selected-app" id="selected-app">
+                    <span class="muted small">Pick an app on the left to start.</span>
+                </div>
+                <!-- App actions moved to sidebar -->
+                <div class="main-actions" id="main-actions"></div>
+            </div>
+
+            <!-- Per-app inspection tabs. Shown ONLY when an app is selected
+                 (renderSelectedApp toggles .hidden). Horizontal strip directly
+                 above the panel content so the "what am I looking at on this
+                 app" view stays adjacent to the data. -->
+            <nav class="main-tabs" id="main-tabs" role="tablist" aria-label="App inspection tabs" hidden>
+                <a class="main-tab tab" data-tab="files"      role="tab"><svg class="ic ic-sm"><use href="#i-folder"/></svg>Files</a>
+                <a class="main-tab tab" data-tab="native"     role="tab"><svg class="ic ic-sm"><use href="#i-cpu"/></svg>Frameworks</a>
+            </nav>
+
+            <div class="panels">
+
+                <!-- WELCOME / EMPTY -->
+                <section class="panel" data-tab="welcome">
+                    <div class="welcome">
+                        <h2>Pick a target app</h2>
+                        <p class="muted">Filter by name or package on the left, then click an app to audit its private storage, runtime processes, and components.</p>
+                        <p class="muted small">Or jump straight to a device-wide view: <a class="link" data-tab-jump="processes">Processes</a>, <a class="link" data-tab-jump="net">Network</a>, <a class="link" data-tab-jump="logcat">Console</a>, <a class="link" data-tab-jump="shell">Shell</a>.</p>
+                    </div>
+                </section>
+
+                <!-- FILES -->
+                <section class="panel hidden" data-tab="files">
+                    <div class="toolbar">
+                        <button class="btn ghost small" id="files-up" title="Parent dir">↑ Up</button>
+                        <span id="files-crumb" class="breadcrumb"></span>
+                        <input class="input mono small" id="files-grep" placeholder="grep here (e.g. token|password)" style="width:200px" title="Search file contents recursively in current dir">
+                        <button class="btn ghost small" id="files-grep-btn" title="grep -ri">🔍 Grep</button>
+                        <button class="btn ghost small" id="files-zip" title="Download current dir as ZIP">⤓ ZIP dir</button>
+                    </div>
+                    <div class="split">
+                        <div class="list-pane" id="files-list"></div>
+                        <div class="content-pane" id="files-preview">
+                            <div class="empty">Select a file to preview.</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PREFS -->
+                <section class="panel hidden" data-tab="prefs">
+                    <div class="toolbar">
+                        <button class="btn ghost small" id="prefs-refresh">↻ Refresh</button>
+                        <span class="muted small">SharedPreferences XML buckets parsed live.</span>
+                    </div>
+                    <div id="prefs-list" class="prefs-stream"></div>
+                </section>
+
+                <!-- SQLITE -->
+                <section class="panel hidden" data-tab="sqlite">
+                    <div class="toolbar">
+                        <button class="btn ghost small" id="sqlite-back" title="Back to Files">← Files</button>
+                        <input class="input mono grow" id="sqlite-path" placeholder="databases/app.db  (relative to /data/data/<pkg>)">
+                        <button class="btn small" id="sqlite-open">Open</button>
+                        <button class="btn ghost small" id="sqlite-download" title="Download the staged .db for offline analysis">⤓ DB</button>
+                    </div>
+                    <div class="split sqlite-split">
+                        <div class="list-pane" id="sqlite-tables"></div>
+                        <div class="content-pane sqlite-content">
+                            <div class="toolbar inner">
+                                <input class="input mono grow" id="sqlite-query" placeholder="SELECT * FROM table LIMIT 100">
+                                <button class="btn small" id="sqlite-run">Run (Ctrl+Enter)</button>
+                                <button class="btn ghost small" id="sqlite-csv" title="Export current result as CSV">⤓ CSV</button>
+                            </div>
+                            <div id="sqlite-result" class="table-wrap"></div>
+                        </div>
+                    </div>
+                </section>
+
+
+                <!-- NATIVE -->
+                <section class="panel hidden" data-tab="native">
+                    <div class="toolbar">
+                        <button class="btn ghost small" id="native-refresh">↻ Refresh</button>
+                    </div>
+                    <div id="native-list" class="native-grid"></div>
+                </section>
+
+                <!-- PROCESSES -->
+                <section class="panel hidden" data-tab="processes">
+                    <div class="toolbar">
+                        <input class="input grow" id="proc-filter" placeholder="Filter package or process name">
+                        <button class="btn ghost small" id="proc-refresh">↻</button>
+                        <span class="muted small" id="proc-count"></span>
+                    </div>
+                    <div id="proc-table" class="table-wrap"></div>
+                </section>
+
+                <!-- NETWORK -->
+                <section class="panel hidden" data-tab="net">
+                    <div class="toolbar">
+                        <input class="input grow" id="net-filter" placeholder="Filter address / state / UID">
+                        <button class="btn ghost small" id="net-refresh">↻</button>
+                        <span class="muted small" id="net-count"></span>
+                    </div>
+                    <div id="net-table" class="table-wrap"></div>
+                </section>
+
+                <!-- LOGCAT -->
+                <section class="panel hidden" data-tab="logcat">
+                    <div class="toolbar">
+                        <input class="input mono grow" id="lc-filter" placeholder='Filter spec, e.g. "MyTag:V *:S"' value="*:V">
+                        <input class="input small" id="lc-pid" type="number" min="0" placeholder="pid" title="--pid=N filter (blank = all)">
+                        <input class="input small" id="lc-tail" type="number" min="0" max="2000" value="200" title="lines back">
+                        <button class="btn small" id="lc-start">Start</button>
+                        <button class="btn ghost small" id="lc-stop">Stop</button>
+                        <button class="btn ghost small" id="lc-clear">Clear</button>
+                        <button class="btn ghost small" id="lc-save" title="Download visible buffer as logcat.txt">⤓ Save</button>
+                        <label class="check"><input type="checkbox" id="lc-autoscroll" checked> autoscroll</label>
+                        <span class="muted small" id="lc-status">idle</span>
+                    </div>
+                    <div class="toolbar" style="padding-top:0">
+                        <input class="input mono grow" id="lc-search" placeholder="Search / highlight (regex). Leave 'only matching' off to keep context">
+                        <label class="check"><input type="checkbox" id="lc-only-matching"> only matching</label>
+                        <span class="muted small" id="lc-search-count"></span>
+                    </div>
+                    <pre id="lc-out" class="logcat grow-y"></pre>
+                </section>
+
+                <!-- SHELL -->
+                <section class="panel hidden" data-tab="shell">
+                    <div class="toolbar">
+                        <input class="input mono grow" id="sh-cmd" placeholder="root shell command (Enter to run)">
+                        <button class="btn small" id="sh-run">Run</button>
+                        <button class="btn ghost small" id="sh-clear">Clear</button>
+                    </div>
+                    <pre id="sh-out" class="logcat grow-y"></pre>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <div class="toast-container" id="toast" aria-live="polite"></div>
+
+    <script src="/app.js" defer></script>
+</body>
+</html>

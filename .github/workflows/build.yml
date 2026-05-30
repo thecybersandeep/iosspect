@@ -1,0 +1,129 @@
+name: build
+
+# Builds the IOSspect .deb on every push to main, plus on tags.
+# Produces both rootful and rootless variants.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-deb:
+    # Need Ubuntu 24.04: it ships libplist 2.3+ which provides
+    # libplist-2.0.so.4 (the ABI Theos's plistutil dynamically links
+    # against). 22.04 only had 2.2 (.so.3).
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install host packaging deps
+        # libplist-utils brings plistutil. fakeroot lets dpkg-deb run
+        # without actual root. On 24.04 the libplist package name
+        # may differ across point releases, so install -utils and let
+        # apt resolve the runtime library dep.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libplist-utils fakeroot xz-utils dpkg-dev
+          ldconfig -p | grep -i libplist || true
+          # Confirm plistutil can actually run
+          plistutil --version || (echo "plistutil broken" && exit 1)
+
+      - name: Cache Theos
+        uses: actions/cache@v4
+        id: theos-cache
+        with:
+          path: ~/theos
+          key: theos-${{ runner.os }}-swift58-v2
+
+      - name: Install Theos
+        if: steps.theos-cache.outputs.cache-hit != 'true'
+        run: |
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+
+      - name: Install Swift cross-compiler for iOS
+        if: steps.theos-cache.outputs.cache-hit != 'true'
+        run: |
+          # install-theos does NOT bundle the Swift cross-compiler. Grab
+          # kabiroberai's prebuilt toolchain. Tarball extracts to
+          # ./linux/iphone/{bin,lib,...}, which is exactly where Theos
+          # expects to find swiftc.
+          cd $HOME/theos/toolchain
+          curl -fsSL https://github.com/kabiroberai/swift-toolchain-linux/releases/download/v2.3.0/swift-5.8-ubuntu22.04.tar.xz -o swift.tar.xz
+          tar -xJf swift.tar.xz
+          rm swift.tar.xz
+          ls -la linux/iphone/bin/swiftc
+
+      - name: Install iPhoneOS SDK
+        if: steps.theos-cache.outputs.cache-hit != 'true'
+        run: |
+          THEOS=$HOME/theos
+          mkdir -p $THEOS/sdks
+          cd $THEOS/sdks
+          # Try a wide SDK range. Newer first (better iOS 26 codesign),
+          # 16.5 as the dependable fallback (what install-theos ships).
+          for v in 18.5 18.2 18.0 17.5 17.0 16.5 15.5; do
+            url="https://github.com/theos/sdks/raw/master/iPhoneOS${v}.sdk.tar.xz"
+            if curl --output /dev/null --silent --head --fail "$url"; then
+              echo "using iPhoneOS${v} SDK"
+              curl -fsSL "$url" | tar -xJf -
+              break
+            fi
+          done
+          ls -1 $THEOS/sdks
+
+      - name: Build rootful .deb
+        run: |
+          export THEOS=$HOME/theos
+          export PATH=$THEOS/toolchain/linux/iphone/bin:$PATH
+          unset THEOS_PACKAGE_SCHEME
+          make package FINALPACKAGE=1
+          mkdir -p out/rootful
+          mv packages/*.deb out/rootful/
+
+      - name: Build rootless .deb
+        run: |
+          export THEOS=$HOME/theos
+          export PATH=$THEOS/toolchain/linux/iphone/bin:$PATH
+          export THEOS_PACKAGE_SCHEME=rootless
+          make clean package FINALPACKAGE=1
+          mkdir -p out/rootless
+          mv packages/*.deb out/rootless/
+
+      - name: Verify entitlements landed on the binaries
+        run: |
+          set -e
+          export PATH=$HOME/theos/toolchain/linux/iphone/bin:$PATH
+          for variant in out/rootful out/rootless; do
+            for deb in $variant/*.deb; do
+              echo "=== $deb ==="
+              dpkg-deb -x "$deb" /tmp/inspect-deb
+              for bin in $(find /tmp/inspect-deb -type f \( -name iosspectd -o -name IOSspect \)); do
+                echo "  $bin"
+                ldid -e "$bin" || true
+                if ! ldid -e "$bin" | grep -q "no-sandbox"; then
+                  echo "FAIL: no-sandbox entitlement missing on $bin"
+                  exit 2
+                fi
+              done
+              rm -rf /tmp/inspect-deb
+            done
+          done
+
+      - name: Upload .deb artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: iosspect-debs
+          path: out/**
+          if-no-files-found: error
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/**/*.deb

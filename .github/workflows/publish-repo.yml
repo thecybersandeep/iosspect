@@ -1,0 +1,77 @@
+name: publish-repo
+
+# After build.yml succeeds, this workflow:
+#   1. pulls the produced .deb files
+#   2. drops them into repo/debs/
+#   3. regenerates Packages, Packages.bz2, Packages.gz, Release
+#   4. publishes repo/ as the gh-pages branch
+#
+# Users add `https://thecybersandeep.github.io/<repo>/` to Sileo or
+# Zebra and IOSspect appears, installable in one tap.
+
+on:
+  workflow_run:
+    workflows: [build]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download .deb artifacts
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          name: iosspect-debs
+          path: out
+
+      - name: Install dpkg + apt-utils
+        run: sudo apt-get update && sudo apt-get install -y dpkg apt-utils bzip2 gzip
+
+      - name: Assemble repo
+        run: |
+          set -e
+          mkdir -p repo/debs
+          # Copy all .deb files. Rootful + rootless go into the same
+          # index; dpkg encodes the Architecture so Sileo picks the
+          # right one for the host.
+          find out -name '*.deb' -exec cp -v {} repo/debs/ \;
+          cd repo
+          # Generate Packages index. -m means "no nag about missing
+          # override file". The path here is relative to repo/.
+          dpkg-scanpackages -m debs / > Packages
+          bzip2 -kf Packages
+          gzip -kf Packages
+          # Release file. Date is RFC 5322.
+          cat > Release <<EOF
+          Origin: IOSspect
+          Label: IOSspect
+          Suite: stable
+          Version: 1.0
+          Codename: ios
+          Architectures: iphoneos-arm iphoneos-arm64
+          Components: main
+          Description: IOSspect. Live iOS runtime audit dashboard served over HTTPS from the jailbroken device.
+          Date: $(date -uR)
+          EOF
+
+      - name: Publish to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./repo
+          publish_branch: gh-pages
+          keep_files: false
+          force_orphan: true
+          enable_jekyll: false
+          user_name: thecybersandeep
+          user_email: noreply@iosspect

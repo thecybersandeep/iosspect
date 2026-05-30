@@ -1,0 +1,12 @@
+Package: com.iosspect.tool
+Name: IOSspect
+Version: 0.1.3
+Architecture: iphoneos-arm
+Description: iOS runtime audit dashboard served over HTTPS from the jailbroken device.
+Maintainer: thecybersandeep
+Author: thecybersandeep
+Section: Development
+Homepage: https://github.com/thecybersandeep/iosspect
+Depends: firmware (>= 15.0), openssl, network-cmds
+Tag: role::hacker, purpose::pentest
+Icon: file:///Applications/IOSspect.app/AppIcon60x60@2x.png

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>IOSspect</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0; padding: 20px;
+    background: #07080b; color: #e4e7eb;
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h1 .green { color: #10D689; }
+  h2 { color: #10D689; font-size: 13px; margin: 24px 0 8px;
+       text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+  ul { padding-left: 18px; color: #9ca3af; }
+  ul li { margin-bottom: 4px; }
+  .pill {
+    display: inline-block; background: #0e1014; border: 1px solid #1e2128;
+    border-radius: 6px; padding: 2px 8px; font-size: 12px; margin: 2px 4px 2px 0;
+    color: #9ca3af;
+  }
+</style>
+</head>
+<body>
+  <h1>IOS<span class="green">spect</span></h1>
+  <div>
+    <span class="pill">v0.1.0</span>
+    <span class="pill">iOS 15 / 16.7 LTS / 17 / 26</span>
+    <span class="pill">jailbreak only</span>
+    <span class="pill">rootful + rootless</span>
+    <span class="pill">arm64</span>
+  </div>
+  <p>Live runtime audit for installed iOS apps. Runs on the jailbroken device, hosts an HTTPS dashboard, lets you read any app's data container and bundle from your browser.</p>
+
+  <h2>What it does</h2>
+  <ul>
+    <li>File browser for each app's Data container and Bundle</li>
+    <li>SQLite reader: tables, schema, paginated rows, ad-hoc SELECT, CSV export</li>
+    <li>NSUserDefaults plist viewer + editor</li>
+    <li>Decoded Info.plist + embedded.mobileprovision</li>
+    <li>Components list: URL schemes, extensions, associated domains, background modes</li>
+    <li>Mach-O scan: per-arch slices, encrypted flag, stripped check, one-click dylib download</li>
+    <li>os_log_stream tail over WebSocket</li>
+    <li>Live process and socket tables</li>
+    <li>One-click pull IPA (base bundle + provisioning)</li>
+  </ul>
+
+  <h2>How to use</h2>
+  <ol style="padding-left: 18px; color: #9ca3af;">
+    <li>Install IOSspect from this repo</li>
+    <li>Open IOSspect from the home screen</li>
+    <li>Tap <b>Start server</b>, copy the URL and the browser password</li>
+    <li>Open the URL in any browser. Verify the SHA-256 fingerprint matches what's on the phone.</li>
+    <li>Sign in with the password</li>
+  </ol>
+
+</body>
+</html>

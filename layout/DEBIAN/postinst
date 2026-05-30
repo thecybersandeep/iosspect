@@ -1,0 +1,105 @@
+#!/bin/sh
+# After-install hook. Rewrites the LaunchDaemon plist so its
+# ProgramArguments + StandardOut/Err paths match the actual install
+# prefix (rootful or rootless). Theos does not auto-substitute those
+# inside .plist files; only filesystem layouts get rewritten.
+#
+# Runs as root via dpkg/apt after the package's data is extracted.
+
+set -e
+
+PREFIX=""
+if [ -d /var/jb ]; then
+    PREFIX="/var/jb"
+fi
+
+PLIST_DIR="${PREFIX}/Library/LaunchDaemons"
+PLIST="${PLIST_DIR}/com.iosspect.daemon.plist"
+LOG_DIR="${PREFIX}/var/log"
+
+mkdir -p "${LOG_DIR}"
+
+# Pre-create the shared state dir as mobile:mobile so the app (mobile uid)
+# can drop a control file there for the daemon (root) to poll. If the
+# daemon's TLSManager.createDirectory runs first as root with default umask,
+# the dir lands root:wheel 0755 and the app's restart() write fails with
+# EACCES. Setting it up here once avoids that race.
+SHARED_DIR="/var/mobile/Library/IOSspect"
+mkdir -p "${SHARED_DIR}"
+chown mobile:mobile "${SHARED_DIR}" 2>/dev/null || true
+chmod 0775 "${SHARED_DIR}"
+
+cat > "${PLIST}" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.iosspect.daemon</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>${PREFIX}/usr/local/bin/iosspectd</string>
+    </array>
+    <key>KeepAlive</key>
+    <true/>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>${LOG_DIR}/iosspectd.log</string>
+    <key>StandardErrorPath</key>
+    <string>${LOG_DIR}/iosspectd.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>IOSSPECT_PORT</key>
+        <string>8008</string>
+    </dict>
+    <key>UserName</key>
+    <string>root</string>
+    <key>GroupName</key>
+    <string>wheel</string>
+</dict>
+</plist>
+EOF
+
+chmod 644 "${PLIST}"
+chown root:wheel "${PLIST}" 2>/dev/null || true
+
+# Find launchctl. Rootless puts it under /var/jb/bin, rootful at /bin.
+LAUNCHCTL=""
+for c in "${PREFIX}/bin/launchctl" /bin/launchctl; do
+    if [ -x "${c}" ]; then LAUNCHCTL="${c}"; break; fi
+done
+
+# Bootstrap the daemon, then force a fresh respawn so an upgrade picks
+# up the new binary even if the previous process is still alive.
+# dpkg can replace the binary on disk while the old daemon keeps running
+# in memory; KeepAlive=true bounces on crash but launchd has no way to
+# know the binary changed during a peaceful in-place upgrade. So:
+#   1. bootout / bootstrap to ensure the job exists in the right domain
+#   2. kickstart -k to restart any running instance with the new binary
+# Some palera1n builds register the job in user/501 rather than system/,
+# so try every plausible target.
+if [ -n "${LAUNCHCTL}" ]; then
+    for d in system user/foreground/501 user/501 gui/501; do
+        "${LAUNCHCTL}" bootout "${d}/com.iosspect.daemon" >/dev/null 2>&1 || true
+    done
+    for d in system user/foreground/501 user/501 gui/501; do
+        "${LAUNCHCTL}" bootstrap "${d}" "${PLIST}" >/dev/null 2>&1 && break
+    done
+    for d in system user/foreground/501 user/501 gui/501; do
+        "${LAUNCHCTL}" kickstart -k "${d}/com.iosspect.daemon" >/dev/null 2>&1 || true
+    done
+fi
+
+# Register IOSspect.app with SpringBoard so the home-screen icon appears.
+# Without this the .app sits on disk but is invisible until reboot/respring.
+# Rootless: /var/jb/usr/bin/uicache. Rootful: /usr/bin/uicache.
+APP_PATH="${PREFIX}/Applications/IOSspect.app"
+for u in "${PREFIX}/usr/bin/uicache" /usr/bin/uicache; do
+    if [ -x "${u}" ]; then
+        "${u}" -p "${APP_PATH}" >/dev/null 2>&1 || "${u}" -a >/dev/null 2>&1 || true
+        break
+    fi
+done
+
+exit 0
