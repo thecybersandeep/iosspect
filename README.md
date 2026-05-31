@@ -34,8 +34,6 @@ Why jailbreak only: reading another app's `Containers/Data/Application/<UUID>/` 
 4. The dashboard shows: URL, cert fingerprint, browser password, **Start server**
 5. Open the URL in any browser, accept the self-signed cert once, sign in with the password
 
-The Sileo repo updates on every push to `main` (GitHub Actions publishes `repo/` to `gh-pages`). To upgrade, refresh Sileo sources and tap **Modify > Upgrade**.
-
 ### Manual `.deb`
 
 Grab the latest from [Releases](https://github.com/thecybersandeep/iosspect/releases) and `dpkg -i com.iosspect.tool_*.deb` over SSH. Both rootful and rootless variants are built per push.
@@ -91,61 +89,6 @@ make package FINALPACKAGE=1
 THEOS_PACKAGE_SCHEME=rootless make clean package FINALPACKAGE=1
 ```
 
-## Project layout
-
-```
-IOSspect/
-  Makefile                              Theos root, two subprojects
-  control                               deb metadata
-  IOSspect/                             SwiftUI .app (home-screen icon)
-    Sources/
-      AppDelegate.swift, SceneDelegate.swift
-      DashboardView.swift               start/stop, URL, fingerprint, password
-      ServerControl.swift               talks to the daemon via the control file
-      Settings.swift                    shared plist with the daemon
-      CryptoUtil.swift                  random password, IPv4 lookup
-  IOSspectd/                            Swift daemon (the HTTPS server)
-    entitlements.plist
-    Sources/
-      main.swift                        boot, state file, control timer
-      Server/
-        IOSspectServer.swift            Network.framework listener + TLS
-        TLSManager.swift                self-signed cert + IP-change regen
-        Security.swift                  password auth, sessions, rate limit
-        Router.swift                    HTTP/1.1 dispatcher with .file streaming
-        OSVersion.swift
-        routes/
-          SystemRoutes.swift
-          AppRoutes.swift
-          FileRoutes.swift
-          PrefsRoutes.swift
-          SqliteRoutes.swift
-          ManifestRoutes.swift
-          LiveRoutes.swift
-          AssetRoutes.swift
-      Root/                             privileged iOS-specific primitives
-        AppDataReader.swift
-        FileBrowser.swift
-        PlistReader.swift
-        SqliteReader.swift              libsqlite3 wrapper
-        NativeLibScanner.swift          Mach-O probe (arch, strip, encrypt)
-        ProcessReader.swift             sysctl kern.proc.all + proc_pidinfo
-        NetReader.swift                 netstat parse
-        LogcatStreamer.swift            tail launchd.log into a ring buffer
-        ShellRunner.swift               posix_spawn /bin/sh -c
-        AppActions.swift                wipe data container, pull IPA
-        ZipWriter.swift                 streaming PKZip 2.0 (STORE)
-        Sanitize.swift                  input validation, path containment
-  layout/                               files installed verbatim
-    DEBIAN/postinst                     bootstraps the launchd daemon
-    Library/LaunchDaemons/
-      com.iosspect.daemon.plist
-  repo/                                 GitHub Pages source for the Sileo repo
-  layout/usr/share/iosspect/web/        embedded SPA (served by the daemon)
-  .github/workflows/
-    build.yml                           builds the .deb on Ubuntu
-    publish-repo.yml                    ships it to gh-pages
-```
 
 ## Screenshots
 
