@@ -2,17 +2,6 @@
 
 On-device runtime auditor for jailbroken iOS. Serves an HTTPS dashboard from the phone; you drive it from a browser on the same network or over `127.0.0.1`. Read any installed app's bundle and data container, run SQL against its databases, tail the system log, run a root shell, package the bundle as an `.ipa`.
 
-```
-  iPhone (jailbroken, root)           Browser
-  +----------------------+            +---------+
-  |  IOSspect.app  (UI)  |            |         |
-  |     |                |            |         |
-  |     v writes plist   |    HTTPS   |  any    |
-  |  iosspectd (daemon) -|-----:8008--|  webkit |
-  |    HTTPS 0.0.0.0     |            |  / V8   |
-  +----------------------+            +---------+
-```
-
 ## Compatibility
 
 |  |  |
@@ -52,21 +41,6 @@ Grab the latest from [Releases](https://github.com/thecybersandeep/iosspect/rele
 | Console | Tails `/var/log/com.apple.xpc.launchd/launchd.log` via a polling endpoint. Filter by substring or pid, save buffer to a file. |
 | Shell | `posix_spawn /bin/sh -c <command>` as root. PATH is widened to include `/var/jb/usr/bin`, `/var/jb/usr/sbin`, etc., so `id`, `ls`, `ps`, `netstat`, `lsof` all resolve. |
 | (App actions) | Download IPA (streams the bundle as `Payload/<App>.app/...` zip; still FairPlay-encrypted for App Store installs). Wipe data container (kills any running processes under the bundle, then `rm -rf` the contents). |
-
-Endpoints all gated by a session cookie issued at `/api/auth/login`. The cookie is `HttpOnly; Secure; SameSite=Strict`.
-
-## Security posture
-
-The daemon runs as root with `no-sandbox` and `platform-application`. The threat model assumes a same-LAN attacker who can reach `https://<phone>:8008`.
-
-* Self-signed TLS cert with the device IP in SAN. Cert regenerates automatically on IP change.
-* Cookie auth. Sessions are 24 random bytes, persisted to `/var/mobile/Library/IOSspect/sessions.json` (mode 0600) so daemon restarts don't log the user out. 12-hour TTL.
-* Rate limiter: per-IP exponential backoff (max 60s) plus a global counter (20 failures across all IPs in 10 minutes triggers a 10 minute lockout). Both persist to disk so a crash-loop scanner can't reset them.
-* All POSTs reject non-JSON bodies (defense against form-based CSRF if `SameSite=Strict` ever weakens).
-* All file routes route user input through `Sanitize.safePathUnder` which enforces a path-component boundary, not a prefix match.
-* SQLite query route accepts only `SELECT` / `WITH ... SELECT` and explicitly rejects `INSERT|UPDATE|DELETE|DROP|ALTER|ATTACH|DETACH|CREATE|REPLACE|PRAGMA`.
-* Per-file Mach-O reads, SQLite stages, and the dir-zip writer all stream via raw POSIX `read`/`write` so the daemon's heap stays small (peaked at ~18 MB while zipping a 131 MB bundle).
-* Default bind is `127.0.0.1`. LAN access (`0.0.0.0`) is an opt-in toggle in the iOS app.
 
 ## Build (CI)
 
