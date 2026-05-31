@@ -34,6 +34,9 @@ Why jailbreak only: reading another app's `Containers/Data/Application/<UUID>/` 
 4. The dashboard shows: URL, cert fingerprint, browser password, **Start server**
 5. Open the URL in any browser, accept the self-signed cert once, sign in with the password
 
+<img width="1254" height="483" alt="image" src="https://github.com/user-attachments/assets/4022b32d-587c-404b-ab66-13383fe3c294" />
+
+
 ### Manual `.deb`
 
 Grab the latest from [Releases](https://github.com/thecybersandeep/iosspect/releases) and `dpkg -i com.iosspect.tool_*.deb` over SSH. Both rootful and rootless variants are built per push.
