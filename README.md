@@ -80,5 +80,3 @@ Top right shows the live device state (`jailbroken` / `iPhone10,3 . iOS 16`), th
 MIT.
 
 ---
-
-Built by **[thecybersandeep](https://github.com/thecybersandeep)**.
