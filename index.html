@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>IOSspect repo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: dark; }
+  body {
+    margin: 0; padding: 40px 24px;
+    background: #07080b; color: #e4e7eb;
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif;
+    max-width: 720px; margin-left: auto; margin-right: auto;
+  }
+  h1 { font-size: 32px; margin: 0 0 8px; }
+  h1 .green { color: #10D689; }
+  p { color: #9ca3af; }
+  .btn {
+    display: inline-block;
+    background: #10D689; color: #000;
+    padding: 12px 18px; border-radius: 10px;
+    font-weight: 700; text-decoration: none;
+    margin: 6px 6px 6px 0;
+  }
+  .url-row {
+    display: flex; gap: 8px;
+    background: #0e1014; border: 1px solid #1e2128;
+    border-radius: 10px; padding: 12px 14px; align-items: center;
+    margin: 16px 0;
+    font-family: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+    font-size: 13px;
+    word-break: break-all;
+  }
+  .url-row b { color: #10D689; }
+  code { background: #0e1014; padding: 2px 6px; border-radius: 4px; }
+  a { color: #10D689; }
+</style>
+</head>
+<body>
+  <h1>IOS<span class="green">spect</span></h1>
+  <p>Live iOS runtime audit. Browser-driven dashboard served from your jailbroken device.</p>
+
+  <p>Add this URL to Sileo / Zebra:</p>
+  <div class="url-row"><b id="repo-url">https://thecybersandeep.github.io/iosspect/</b></div>
+
+  <a class="btn" href="sileo://source/https://thecybersandeep.github.io/iosspect/">Add to Sileo</a>
+  <a class="btn" href="zbra://sources/add/https://thecybersandeep.github.io/iosspect/">Add to Zebra</a>
+
+  <script>
+    // Replace placeholder with the actual page origin so the page
+    // self-documents whatever URL it was loaded from.
+    const here = location.origin + location.pathname.replace(/[^/]*$/, '');
+    document.getElementById('repo-url').textContent = here;
+    document.querySelectorAll('a.btn').forEach(a => {
+      a.href = a.href.replace('https://thecybersandeep.github.io/iosspect/', here);
+    });
+  </script>
+</body>
+</html>

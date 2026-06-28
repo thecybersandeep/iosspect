@@ -1,0 +1,9 @@
+Origin: IOSspect
+Label: IOSspect
+Suite: stable
+Version: 1.0
+Codename: ios
+Architectures: iphoneos-arm iphoneos-arm64
+Components: main
+Description: IOSspect. Live iOS runtime audit dashboard served over HTTPS from the jailbroken device.
+Date: Sun, 28 Jun 2026 03:26:56 +0000
